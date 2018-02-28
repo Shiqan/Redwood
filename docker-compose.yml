@@ -1,0 +1,213 @@
+version: "3"
+services:
+  portainer:
+    container_name: portainer
+    image: portainer/portainer
+    environment:
+      - TZ=${TZ}
+    ports:
+      - 9000:9000
+    restart: unless-stopped
+
+  watchtower:
+    container_name: watchtower
+    image: v2tec/watchtower
+    environment:
+        - TZ=${TZ}
+    volumes:
+        - '/var/run/docker.sock:/var/run/docker.sock'
+    restart: unless-stopped
+
+  plex:
+    container_name: plex
+    image: linuxserver/plex
+    environment:
+      - VERSION=latest
+      - PGID=${PGID}
+      - PUID=${PUID}
+      - TZ=${TZ}
+    networks:
+      - host
+    volumes:
+      - /home/docker/config/plex:/config
+      - /home/data/tv:/data/tv
+      - /home/data/movies:/data/movies
+      - /home/data/music:/data/music
+    restart: unless-stopped
+
+  plexpy:
+    container_name: plexpy
+    image: linuxserver/plexpy
+    depends_on:
+      - plex
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    ports:
+        - 8181:8181
+    volumes:
+        - /home/docker/config/plexpy:/config
+        - /home/docker/config/plex/Library/Application Support/Plex Media Server/Logs:/logs:ro
+    restart: unless-stopped
+
+  ombi:
+    container_name: ombi
+    image: linuxserver/ombi
+    depends_on:
+      - plex
+    ports:
+        - 3579:3579
+    environment:
+        - PUID=${PUID}
+        - PGID=${PGID}
+        - TZ=${TZ}
+    volumes:
+        - /home/docker/config/ombi:/config
+    restart: unless-stopped
+
+  pia:
+    container_name: pia
+    image: colinhebert/pia-openvpn
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - "/dev/net/tun"
+    environment:
+      - USERNAME=${PIA_USERNAME}
+      - PASSWORD=${PIA_PASSWORD}
+      - REGION=${PIA_REGION}
+      - TZ=${TZ}
+    networks:
+      - pia
+    restart: unless-stopped
+
+  transmission:
+    container_name: transmission
+    image: linuxserver/transmission
+    depends_on:
+      - pia
+    environment:
+      - PGID=${PGID}
+      - PUID=${PUID}
+      - TZ=${TZ}
+    networks:
+      - service:pia
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+    volumes:
+      - /home/docker/config/transmission:/config
+      - /home/data/downloads:/downloads
+      - /home/data/watch:/watch
+    restart: unless-stopped
+
+  jackett:
+    container_name: jackett
+    image: linuxserver/jackett
+    depends_on:
+      - pia
+    environment:
+      - PGID=${PGID}
+      - PUID=${PUID}
+      - TZ=${TZ}
+    networks:
+      - service:pia
+    ports:
+      - 9117:9117
+    volumes:
+      - /home/docker/config/jackett:/config
+      - /home/data/downloads:/downloads
+    restart: unless-stopped
+
+  sonarr:
+    container_name: sonarr
+    image: linuxserver/sonarr
+    depends_on:
+      - pia
+      - transmission
+      - jackett
+    environment:
+      - PGID=${PGID}
+      - PUID=${PUID}
+      - TZ=${TZ}
+    networks:
+      - service:pia
+    ports:
+      - 8989:8989
+    volumes:
+      - /home/docker/config/sonarr:/config
+      - /home/data/tv:/tv
+      - /home/data/movies:/movies
+    restart: unless-stopped
+
+  radarr:
+    container_name: radarr
+    image: linuxserver/radarr
+    depends_on:
+      - pia
+      - transmission
+      - jackett
+    environment:
+      - PGID=${PGID}
+      - PUID=${PUID}
+      - TZ=${TZ}
+    networks:
+      - service:pia
+    ports:
+      - 7878:7878
+    volumes:
+      - /home/docker/config/radarr:/config
+      - /home/data/downloads:/downloads
+      - /home/data/movies:/movies
+    restart: unless-stopped
+
+  headphones:
+    container_name: headphones
+    image: linuxserver/headphones
+    depends_on:
+      - pia
+      - transmission
+    environment:
+      - PGID=${PGID}
+      - PUID=${PUID}
+      - TZ=${TZ}
+    networks:
+      - service:pia
+    ports:
+      - 8181:8181
+    volumes:
+      - /home/docker/config/headphones:/config
+      - /home/data/downloads:/downloads
+      - /home/data/music:/music
+    restart: unless-stopped
+
+  netdata:
+    container_name: netdata
+    image: titpetric/netdata
+    ports:
+        - 19999:19999
+    cap_add:
+        - SYS_PTRACE
+    volumes:
+        - /proc:/host/proc:ro
+        - /sys:/host/sys:ro
+        - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  # pihole:
+  #   container_name: pihole
+  #   image: diginc/pi-hole:alpine
+  #   environment:
+  #     - ServerIP=${HOST_IP}
+  #     - TZ=${TZ}
+  #     - WEBPASSWORD=${PIHOLE_PASSWORD}
+  #   volumes:
+  #     - /root/pihole/:/etc/pihole/
+  #     - /root/pihole/dnsmasq.d/:/etc/dnsmasq.d/
+  #   ports:
+  #     - "80:80"
+  #     - "53:53/tcp"
+  #     - "53:53/udp"
+  #   restart: unless-stopped
