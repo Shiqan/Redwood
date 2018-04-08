@@ -9,15 +9,6 @@ services:
       - 9000:9000
     restart: unless-stopped
 
-  watchtower:
-    container_name: watchtower
-    image: v2tec/watchtower
-    environment:
-        - TZ=${TZ}
-    volumes:
-        - '/var/run/docker.sock:/var/run/docker.sock'
-    restart: unless-stopped
-
   plex:
     container_name: plex
     image: linuxserver/plex
@@ -29,10 +20,10 @@ services:
     networks:
       - host
     volumes:
-      - /home/docker/config/plex:/config
-      - /home/data/tv:/data/tv
-      - /home/data/movies:/data/movies
-      - /home/data/music:/data/music
+      - ./config/plex:/config
+      - ./media/tv:/data/tv
+      - ./media/movies:/data/movies
+      - ./media/music:/data/music
     restart: unless-stopped
 
   plexpy:
@@ -47,8 +38,8 @@ services:
     ports:
         - 8181:8181
     volumes:
-        - /home/docker/config/plexpy:/config
-        - /home/docker/config/plex/Library/Application Support/Plex Media Server/Logs:/logs:ro
+        - ./config/plexpy:/config
+        - ./config/plex/Library/Application Support/Plex Media Server/Logs:/logs:ro
     restart: unless-stopped
 
   ombi:
@@ -63,7 +54,17 @@ services:
         - PGID=${PGID}
         - TZ=${TZ}
     volumes:
-        - /home/docker/config/ombi:/config
+        - ./config/ombi:/config
+    restart: unless-stopped
+
+  nginx:
+    container_name: web
+    image: dperson/nginx
+    networks:
+      - service:pia
+    ports:
+      - 80:80
+      - 443:443
     restart: unless-stopped
 
   pia:
@@ -98,9 +99,10 @@ services:
       - 51413:51413
       - 51413:51413/udp
     volumes:
-      - /home/docker/config/transmission:/config
-      - /home/data/downloads:/downloads
-      - /home/data/watch:/watch
+      - ./config:/config
+      - ./downloads:/downloads
+      - ./downloads/watch:/watch
+      - ./downloads/complete:/downloads/complete
     restart: unless-stopped
 
   jackett:
@@ -117,8 +119,8 @@ services:
     ports:
       - 9117:9117
     volumes:
-      - /home/docker/config/jackett:/config
-      - /home/data/downloads:/downloads
+      - ./config/jackett:/config
+      - ./downloads:/downloads
     restart: unless-stopped
 
   sonarr:
@@ -137,9 +139,9 @@ services:
     ports:
       - 8989:8989
     volumes:
-      - /home/docker/config/sonarr:/config
-      - /home/data/tv:/tv
-      - /home/data/movies:/movies
+      - ./config/sonarr:/config
+      - ./media/tv:/tv
+      - ./media/movies:/movies
     restart: unless-stopped
 
   radarr:
@@ -158,9 +160,9 @@ services:
     ports:
       - 7878:7878
     volumes:
-      - /home/docker/config/radarr:/config
-      - /home/data/downloads:/downloads
-      - /home/data/movies:/movies
+      - ./config/radarr:/config
+      - ./downloads:/downloads
+      - ./media/movies:/movies
     restart: unless-stopped
 
   headphones:
@@ -178,9 +180,9 @@ services:
     ports:
       - 8181:8181
     volumes:
-      - /home/docker/config/headphones:/config
-      - /home/data/downloads:/downloads
-      - /home/data/music:/music
+      - ./config/headphones:/config
+      - ./downloads:/downloads
+      - ./media/music:/music
     restart: unless-stopped
 
   netdata:
