@@ -35,19 +35,24 @@
 ### Setup RPI
 
 * Install [Hypriot](http://blog.hypriot.com/)
-* Mount hdd (`sudo fdisk -l`) and auto mount on boot (`sudo nano etc/fstab`), and grant access (`sudo chown -R user:group /mount/location/`)
+* [Change Cloud-init](#change-cloud-init)
+* Mount hdd (`sudo fdisk -l` to see id, then `sudo mount /dev/id /mount/location`) and auto mount on boot (`sudo nano etc/fstab`), and grant access (`sudo chown -R user:group /mount/location/`)
 * Change docker install to hdd (`sudo nano etc/default/docker`, add `-g /mount/location/docker`)
 * Prepare `.env` file for docker-compose
 * Build transmission proxy image (because of some weird issue with docker-compose build)
   * `cd proxy && docker build -t haugene/rpi-transmission-openvpn-proxy --file Dockerfile.armhf .`
 * Run `docker-compose up -d`
 
-#### Steps after installation (put it in the cloud-init)
+#### Change Cloud-init 
 * Change default username
 * Change default password
 * Change hostname
 * Setup key-based authentication and disable password login
-* Install a firewall (`sudo apt-get updaet && sudo apt-get install ufw`) and open the port(s) you want
+* See [Docs](http://cloudinit.readthedocs.io/en/latest/index.html) for more options (eg, you can also mount hdd)
+
+
+#### Steps after installation
+* Install a firewall (`sudo apt-get update && sudo apt-get install ufw`) and open the port(s) you want (eg,for ssh and plex: `sudo ufw allow ssh`, and `sudo ufw allow 32400/tcp`)
 * Install fail2ban (`sudo apt-get install fail2ban`)
 * Open port on router
 
