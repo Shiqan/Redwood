@@ -50,7 +50,7 @@ services:
   #   image: ${TRANSMISSION}
 
   transmission:
-    container_name: tranmission
+    container_name: transmission
     build:
       context: .
       dockerfile: Dockerfile.armhf

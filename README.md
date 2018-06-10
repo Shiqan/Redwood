@@ -52,6 +52,7 @@
 
 
 #### Steps after installation
+* Double check transmission ip (`docker exec -it transmission` and `curl ipinfo.io/ip`)
 * Install a firewall (`sudo apt-get update && sudo apt-get install ufw`) and open the port(s) you want (eg,for ssh and plex: `sudo ufw allow ssh`, and `sudo ufw allow 32400/tcp`)
 * Install fail2ban (`sudo apt-get install fail2ban`)
 * Open port on router
